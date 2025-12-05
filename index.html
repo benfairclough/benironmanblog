@@ -1,0 +1,77 @@
+<script>
+    async function fetchPosts(){
+      const res = await fetch('/api/posts');
+      return res.ok ? await res.json() : [];
+    }
+    
+    async function publishPost(title, body){
+      const res = await fetch('/api/posts', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({title, body})
+      });
+      if(!res.ok) throw await res.json();
+      return res.json();
+    }
+    
+    async function postComment(postId, name, text){
+      const res = await fetch(`/api/posts/${postId}/comments`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({name, text})
+      });
+      if(!res.ok) throw await res.json();
+      return res.json();
+    }
+    
+    /* Example render flow */
+    async function render(){
+      const posts = await fetchPosts();
+      const list = document.getElementById('postsList');
+      list.innerHTML = '';
+      if(!posts.length) { list.innerHTML = '<p class="small">No posts yet.</p>'; return; }
+      posts.sort((a,b)=>b.created-a.created).forEach(p=>{
+        const div = document.createElement('div');
+        div.className = 'post';
+        div.innerHTML = `
+          <div class="row">
+            <div class="thumb">${thumbnailSVG()}</div>
+            <div class="content">
+              <strong>${escapeHtml(p.title)}</strong>
+              <div class="meta">${new Date(p.created).toLocaleString()}</div>
+              <p>${escapeHtml(p.body)}</p>
+              <div class="small">Comments (${p.comments.length})</div>
+              <div class="comments">${p.comments.map(c=>`<div class="comment"><strong>${escapeHtml(c.name)}</strong><div class="small">${escapeHtml(c.text)}</div></div>`).join('')}</div>
+              <div style="margin-top:8px">
+                <input placeholder="Your name" class="cname" style="width:30%;padding:6px;margin-right:6px"/>
+                <input placeholder="Comment" class="ctext" style="width:50%;padding:6px;margin-right:6px"/>
+                <button class="cbtn">Post</button>
+              </div>
+            </div>
+          </div>`;
+        list.appendChild(div);
+        div.querySelector('.cbtn').onclick = async ()=>{
+          const name = div.querySelector('.cname').value.trim()||'Anonymous';
+          const text = div.querySelector('.ctext').value.trim();
+          if(!text) return alert('Comment cannot be empty');
+          await postComment(p.id, name, text);
+          render();
+        };
+      });
+    }
+    
+    document.getElementById('savePost').onclick = async ()=>{
+      const title = document.getElementById('postTitle').value.trim();
+      const body = document.getElementById('postBody').value.trim();
+      if(!title||!body) return alert('Title and content required');
+      await publishPost(title, body);
+      document.getElementById('postTitle').value=''; document.getElementById('postBody').value='';
+      render();
+    };
+    
+    function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]) }
+    function thumbnailSVG(){ return `<svg width="84" height="64" viewBox="0 0 84 64" xmlns="http://www.w3.org/2000/svg"><rect width="84" height="64" rx="6" fill="#e9f5f8"/><circle cx="22" cy="32" r="10" fill="#e63946"/><rect x="40" y="18" width="36" height="28" rx="4" fill="#2b6f9e"/></svg>` }
+    
+    render();
+    </script>
+    

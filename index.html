@@ -1,38 +1,21 @@
 <script>
-    async function fetchPosts(){
-      const res = await fetch('/api/posts');
-      return res.ok ? await res.json() : [];
-    }
-    
+    async function fetchPosts(){ const r = await fetch('/api/posts'); return r.ok ? r.json() : []; }
     async function publishPost(title, body){
-      const res = await fetch('/api/posts', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({title, body})
-      });
-      if(!res.ok) throw await res.json();
-      return res.json();
+      const r = await fetch('/api/posts', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({title, body}) });
+      if(!r.ok) throw await r.json(); return r.json();
     }
-    
     async function postComment(postId, name, text){
-      const res = await fetch(`/api/posts/${postId}/comments`, {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({name, text})
-      });
-      if(!res.ok) throw await res.json();
-      return res.json();
+      const r = await fetch(`/api/posts/${postId}/comments`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({name, text}) });
+      if(!r.ok) throw await r.json(); return r.json();
     }
+    function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]) }
     
-    /* Example render flow */
     async function render(){
       const posts = await fetchPosts();
-      const list = document.getElementById('postsList');
-      list.innerHTML = '';
+      const list = document.getElementById('postsList'); list.innerHTML='';
       if(!posts.length) { list.innerHTML = '<p class="small">No posts yet.</p>'; return; }
       posts.sort((a,b)=>b.created-a.created).forEach(p=>{
-        const div = document.createElement('div');
-        div.className = 'post';
+        const div = document.createElement('div'); div.className='post';
         div.innerHTML = `
           <div class="row">
             <div class="thumb">${thumbnailSVG()}</div>
@@ -69,7 +52,6 @@
       render();
     };
     
-    function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]) }
     function thumbnailSVG(){ return `<svg width="84" height="64" viewBox="0 0 84 64" xmlns="http://www.w3.org/2000/svg"><rect width="84" height="64" rx="6" fill="#e9f5f8"/><circle cx="22" cy="32" r="10" fill="#e63946"/><rect x="40" y="18" width="36" height="28" rx="4" fill="#2b6f9e"/></svg>` }
     
     render();
